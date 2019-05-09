@@ -44,7 +44,9 @@ if (!program.output) return console.log('Error: Please enter an output path.');
     hash.update(data)
   }
   const job_id = hash.digest('hex').substring(0, 8)
-  const temp_path = os.tmpdir() + '/' + job_id
+  const temp_dir = os.tmpdir() + '/' + job_id
+  const temp_path = temp_dir + '/' + job_id
+  if (!fs.existsSync(temp_dir)) fs.mkdirSync(temp_dir)
   const probe = JSON.parse((await exec(`ffprobe -v quiet -print_format json -show_format -show_streams ${program.input}`)).stdout)
   const num_frames = probe.streams[0].nb_frames
   console.log(`Running job on file: ${parsed.base} (${job_id}) [${num_frames} frames]`)
