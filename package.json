@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/cameronus/primitive-batch#readme",
   "dependencies": {
-    "child-process-promise": "^2.2.1",
-    "commander": "^2.20.0"
+    "commander": "^2.20.0",
+    "progress": "^2.0.3"
   }
 }
