@@ -1,0 +1,26 @@
+{
+  "name": "primitive-batch",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "prim": "./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cameronus/primitive-batch.git"
+  },
+  "author": "Cameron Jones",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cameronus/primitive-batch/issues"
+  },
+  "homepage": "https://github.com/cameronus/primitive-batch#readme",
+  "dependencies": {
+    "child-process-promise": "^2.2.1",
+    "commander": "^2.20.0"
+  }
+}
