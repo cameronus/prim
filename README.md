@@ -1,1 +1,1 @@
-# primitive-batch
+# prim
