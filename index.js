@@ -45,11 +45,14 @@ if (!program.output) return console.log('Error: Please enter an output path.');
   }
   const job_id = hash.digest('hex').substring(0, 8)
   const temp_dir = os.tmpdir() + '/' + job_id
-  const temp_path = temp_dir + '/' + job_id
   if (!fs.existsSync(temp_dir)) fs.mkdirSync(temp_dir)
+  const temp_path = temp_dir + '/' + job_id
   const probe = JSON.parse((await exec(`ffprobe -v quiet -print_format json -show_format -show_streams ${program.input}`)).stdout)
   const num_frames = probe.streams[0].nb_frames
+  const frac = probe.streams[0].r_frame_rate.split('/')
+  const frame_rate = Math.round(frac[0] / frac[1])
   console.log(`Running job on file: ${parsed.base} (${job_id}) [${num_frames} frames]`)
+  // handle padded filenames with greater than four zeros
   if (!fs.existsSync(`${temp_path}_0001.png`)) {
     console.log('Converting to frames...')
     await exec(`ffmpeg -i ${program.input} ${temp_path}_%04d.png`)
@@ -71,9 +74,8 @@ if (!program.output) return console.log('Error: Please enter an output path.');
       job.on('exit', code => resolve(code))
       job.on('error', err => reject(err))
     })
-
   }
-
+  await exec(`ffmpeg -framerate ${frame_rate} -pattern_type glob -i '${temp_path}_processed_*.png' -c:v libx264 -pix_fmt yuv420p ${program.output}`)
 })()
 
 // ffmpeg -i input.mp4 output_%04d.png
