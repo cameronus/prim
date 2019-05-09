@@ -30,7 +30,6 @@ if (!program.output) return console.log('Error: Please enter an output path.');
 
 (async () => {
   try {
-    if ((await exec('which primitive').stdout) == '') return console.log('Error: primitive not installed')
     const parsed = path.parse(program.input)
     const parsed_out = path.parse(program.output)
     const input = fs.createReadStream(program.input)
