@@ -52,16 +52,14 @@ if (!program.output) return console.log('Error: Please enter an output path.');
   const frac = probe.streams[0].r_frame_rate.split('/')
   const frame_rate = Math.round(frac[0] / frac[1])
   console.log(`Running job on file: ${parsed.base} (${job_id}) [${num_frames} frames]`)
-  // handle padded filenames with greater than four zeros
-  if (!fs.existsSync(`${temp_dir}/0001.png`)) {
+  if (!fs.existsSync(`${temp_dir}/1.png`)) {
     console.log('Converting to frames...')
-    await exec(`ffmpeg -i ${program.input} ${temp_dir}/%04d.png`)
+    await exec(`ffmpeg -i ${program.input} ${temp_dir}/%d.png`)
   }
   const list = Array.from({ length: num_frames }, (v, e) => e + 1)
   for (const i of list) {
     const n = parseInt(((i - 1) / (num_frames - 1)) * (program.end - program.start) + parseInt(program.start))
-    const padded = i.toString().padStart(4, '0')
-    if (fs.existsSync(`${temp_dir}/processed-${padded}.png`)) continue
+    if (fs.existsSync(`${temp_dir}/processed-${i}.png`)) continue
     const bar = new ProgressBar(`Processing frame ${i} [:bar] :percent :elapsedss`, {
       total: n,
       complete: '=',
@@ -69,7 +67,7 @@ if (!program.output) return console.log('Error: Please enter an output path.');
       clear: true
     })
     await new Promise((resolve, reject) => {
-      const job = spawn('primitive', [ '-i', `${temp_dir}/${padded}.png`, '-o', `${temp_dir}/processed-${padded}.png`, '-n', n, '-v', ...options ])
+      const job = spawn('primitive', [ '-i', `${temp_dir}/${i}.png`, '-o', `${temp_dir}/processed-${i}.png`, '-n', n, '-v', ...options ])
       job.stdout.on('data', data => bar.tick())
       job.on('exit', code => resolve(code))
       job.on('error', err => reject(err))
