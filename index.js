@@ -30,6 +30,7 @@ if (!program.output) return console.log('Error: Please enter an output path.');
 
 (async () => {
   try {
+    if ((await exec('which primitive').stdout) == '') return console.log('Error: primitive not installed')
     const parsed = path.parse(program.input)
     const parsed_out = path.parse(program.output)
     const input = fs.createReadStream(program.input)
@@ -61,7 +62,7 @@ if (!program.output) return console.log('Error: Please enter an output path.');
     for (const i of list) {
       const n = parseInt(((i - 1) / (num_frames - 1)) * (program.end - program.start) + parseInt(program.start))
       if (fs.existsSync(`${temp_dir}/processed-${i}.png`)) continue
-      const bar = new ProgressBar(`Processing frame ${i} [:bar] :percent :elapsedss`, {
+      const bar = new ProgressBar(`Processing frame ${i} [:bar] :current/${n} `, { // :percent :elapsedss
         total: n,
         complete: '=',
         incomplete: ' ',
@@ -77,7 +78,7 @@ if (!program.output) return console.log('Error: Please enter an output path.');
     console.log(`Finished processing. Outputting to ${parsed_out.base}...`)
     await exec(`ffmpeg -y -framerate ${frame_rate} -pattern_type glob -i '${temp_dir}/processed-*.png' -c:v libx264 -pix_fmt yuv420p ${program.output}`)
   } catch (e) {
-    console.log(e)
+    console.log('Error:', e)
   }
 })()
 
