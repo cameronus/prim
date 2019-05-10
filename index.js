@@ -14,8 +14,7 @@ const ProgressBar = require('progress')
 
 const default_n = 1000
 
-program
-  .version(require('./package.json').version)
+program.version(require('./package.json').version)
 
   .option('-i, --input <file>', 'input file path')
   .option('-o, --output <file>', 'output file path')
@@ -23,9 +22,9 @@ program
   .option('-b, --begin <n>', 'beginning n', default_n)
   .option('-e, --end <n>', 'ending n', default_n)
 
-  .option('-m, --mode <mode>', 'primitive mode', '1')
+  .option('-m, --mode <mode>', 'primitive mode', '0')
   .option('-r, --resize <resize>', 'resized resolution before processing', '256')
-  .option('-s, --size <size>', 'output image size', '1024')
+  .option('-s, --size <size>', 'output image size', '1920')
 
   .option('-d, --debug', 'debug mode')
 
@@ -33,7 +32,9 @@ program.parse(process.argv)
 
 if (program.debug) console.log(program.opts())
 if (!program.input) return console.log('Error: Please enter a file to process.')
-if (!program.output) return console.log('Error: Please enter an output path.');
+if (!program.output) return console.log('Error: Please enter an output path.')
+
+let working_file = '';
 
 (async () => {
   try {
@@ -61,6 +62,8 @@ if (!program.output) return console.log('Error: Please enter an output path.');
     for (const i of list) {
       const n = parseInt(((i - 1) / (num_frames - 1)) * (program.end - program.begin) + parseInt(program.begin))
       if (fs.existsSync(`${temp_dir}/processed-${i}.png`)) continue
+      fs.writeFileSync(`${temp_dir}/processed-${i}.png`, '')
+      working_file = `${temp_dir}/processed-${i}.png`
       const bar = new ProgressBar(`Processing frame ${i} (:times) [:bar] :current/${n} `, {
         total: n,
         complete: '=',
@@ -74,6 +77,7 @@ if (!program.output) return console.log('Error: Please enter an output path.');
         job.on('exit', code => resolve(code))
         job.on('error', err => reject(err))
       })
+      working_file = ''
       time = parseInt((performance.now() - start) / 1000)
     }
     console.log(`Finished processing. Outputting to ${parsed_out.base}...`)
@@ -82,6 +86,11 @@ if (!program.output) return console.log('Error: Please enter an output path.');
     console.log('Error:', e)
   }
 })()
+
+process.on('SIGINT', () => {
+  if (working_file !== '') fs.unlinkSync(working_file)
+  process.exit(2)
+})
 
 // ffmpeg -i input.mp4 output_%04d.png
 // for i in raw/*; do primitive -i $i -o processed/$i -n 100; done
