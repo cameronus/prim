@@ -61,22 +61,15 @@ if (!program.output) return console.log('Error: Please enter an output path.');
     for (const i of list) {
       const n = parseInt(((i - 1) / (num_frames - 1)) * (program.end - program.begin) + parseInt(program.begin))
       if (fs.existsSync(`${temp_dir}/processed-${i}.png`)) continue
-      process.stdout.cursorTo(0)
-      process.stdout.write('ok\r')
       const bar = new ProgressBar(`Processing frame ${i} (:times) [:bar] :current/${n} `, {
         total: n,
         complete: '=',
         incomplete: ' ',
-        clear: true,
-        callback: () => process.stdout.clearLine()
+        clear: true
       })
       const start = performance.now()
       await new Promise((resolve, reject) => {
-        const job = spawn('primitive', [ '-i', `${temp_dir}/${i}.png`, '-o', `${temp_dir}/processed-${i}.png`, '-n', n, '-v', '-m', program.mode, '-r', program.resize, '-s', program.size ], {
-          env: {
-            PATH: process.env.PATH
-          }
-        })
+        const job = spawn(os.homedir() + '/go/bin/primitive', [ '-i', `${temp_dir}/${i}.png`, '-o', `${temp_dir}/processed-${i}.png`, '-n', n, '-v', '-m', program.mode, '-r', program.resize, '-s', program.size ])
         job.stdout.on('data', data => bar.tick({ time: time || '?' }))
         job.on('exit', code => resolve(code))
         job.on('error', err => reject(err))
