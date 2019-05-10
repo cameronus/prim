@@ -7,6 +7,7 @@ const util = require('util')
 const crypto = require('crypto')
 const cp = require('child_process')
 const program = require('commander')
+const { performance } = require('perf_hooks')
 const exec = util.promisify(cp.exec)
 const { spawn } = cp
 const ProgressBar = require('progress')
@@ -15,11 +16,17 @@ const default_n = 1000
 
 program
   .version(require('./package.json').version)
+
   .option('-i, --input <file>', 'input file path')
   .option('-o, --output <file>', 'output file path')
-  .option('-s, --start <n>', 'starting n', default_n)
+
+  .option('-b, --begin <n>', 'beginning n', default_n)
   .option('-e, --end <n>', 'ending n', default_n)
-  .option('-c, --custom <opts>', 'additional options', '1,256,1024')
+
+  .option('-m, --mode <mode>', 'primitive mode', '1')
+  .option('-r, --resize <resize>', 'resized resolution before processing', '256')
+  .option('-s, --size <size>', 'output image size', '1024')
+
   .option('-d, --debug', 'debug mode')
 
 program.parse(process.argv)
@@ -34,14 +41,6 @@ if (!program.output) return console.log('Error: Please enter an output path.');
     const parsed_out = path.parse(program.output)
     const input = fs.createReadStream(program.input)
     const hash = crypto.createHash('sha256')
-    const options = [
-      '-m',
-      program.custom.split(',')[0],
-      '-r',
-      program.custom.split(',')[1],
-      '-s',
-      program.custom.split(',')[2]
-    ]
     for await (const data of input) {
       hash.update(data)
     }
@@ -58,24 +57,30 @@ if (!program.output) return console.log('Error: Please enter an output path.');
       await exec(`ffmpeg -i ${program.input} ${temp_dir}/%d.png`)
     }
     const list = Array.from({ length: num_frames }, (v, e) => e + 1)
+    let time
     for (const i of list) {
-      const n = parseInt(((i - 1) / (num_frames - 1)) * (program.end - program.start) + parseInt(program.start))
+      const n = parseInt(((i - 1) / (num_frames - 1)) * (program.end - program.begin) + parseInt(program.begin))
       if (fs.existsSync(`${temp_dir}/processed-${i}.png`)) continue
-      const bar = new ProgressBar(`Processing frame ${i} [:bar] :current/${n} `, { // :percent :elapsedss
+      process.stdout.cursorTo(0)
+      process.stdout.write('ok\r')
+      const bar = new ProgressBar(`Processing frame ${i} (:times) [:bar] :current/${n} `, {
         total: n,
         complete: '=',
         incomplete: ' ',
-        clear: true
+        clear: true,
+        callback: () => process.stdout.clearLine()
       })
+      const start = performance.now()
       await new Promise((resolve, reject) => {
-        const job = spawn('primitive', [ '-i', `${temp_dir}/${i}.png`, '-o', `${temp_dir}/processed-${i}.png`, '-n', n, '-v', ...options ])
-        job.stdout.on('data', data => bar.tick())
+        const job = spawn('primitive', [ '-i', `${temp_dir}/${i}.png`, '-o', `${temp_dir}/processed-${i}.png`, '-n', n, '-v', '-m', program.mode, '-r', program.resize, '-s', program.size ])
+        job.stdout.on('data', data => bar.tick({ time: time || '?' }))
         job.on('exit', code => resolve(code))
         job.on('error', err => reject(err))
       })
+      time = parseInt((performance.now() - start) / 1000)
     }
     console.log(`Finished processing. Outputting to ${parsed_out.base}...`)
-    await exec(`ffmpeg -y -framerate ${frame_rate} -pattern_type glob -i '${temp_dir}/processed-*.png' -c:v libx264 -pix_fmt yuv420p ${program.output}`)
+    await exec(`ffmpeg -framerate ${frame_rate} -pattern_type glob -i '${temp_dir}/processed-*.png' -c:v libx264 -pix_fmt yuv420p ${program.output} -y`)
   } catch (e) {
     console.log('Error:', e)
   }
