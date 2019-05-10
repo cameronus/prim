@@ -72,7 +72,11 @@ if (!program.output) return console.log('Error: Please enter an output path.');
       })
       const start = performance.now()
       await new Promise((resolve, reject) => {
-        const job = spawn('primitive', [ '-i', `${temp_dir}/${i}.png`, '-o', `${temp_dir}/processed-${i}.png`, '-n', n, '-v', '-m', program.mode, '-r', program.resize, '-s', program.size ])
+        const job = spawn('primitive', [ '-i', `${temp_dir}/${i}.png`, '-o', `${temp_dir}/processed-${i}.png`, '-n', n, '-v', '-m', program.mode, '-r', program.resize, '-s', program.size ], {
+          env: {
+            PATH: process.env.PATH
+          }
+        })
         job.stdout.on('data', data => bar.tick({ time: time || '?' }))
         job.on('exit', code => resolve(code))
         job.on('error', err => reject(err))
