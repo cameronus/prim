@@ -77,7 +77,7 @@ if (!program.output) return console.log('Error: Please enter an output path.');
       time = parseInt((performance.now() - start) / 1000)
     }
     console.log(`Finished processing. Outputting to ${parsed_out.base}...`)
-    await exec(`ffmpeg -framerate ${frame_rate} -pattern_type glob -i '${temp_dir}/processed-*.png' -c:v libx264 -pix_fmt yuv420p ${program.output} -y`)
+    await exec(`ffmpeg -framerate ${frame_rate} -i '${temp_dir}/processed-%d.png' -c:v libx264 -pix_fmt yuv420p ${program.output} -y`)
   } catch (e) {
     console.log('Error:', e)
   }
